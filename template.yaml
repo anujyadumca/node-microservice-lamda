@@ -35,10 +35,12 @@ Resources:
       Environment:
         Variables:
           USERS_TABLE: !Ref UsersTable
-          JWT_SECRET: !Ref JwtSecret
+          JWT_SECRET: !Sub "{{resolve:ssm-secure:/auth-basic/dev/JWT_SECRET}}"
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
+        - SSMParameterReadPolicy:
+            ParameterName: /auth-basic/dev/JWT_SECRET
       Events:
         ApiGateway:
           Type: HttpApi
