@@ -7,7 +7,7 @@ const TableName = process.env.USERS_TABLE;
 
 export async function register(email, password) {
   const existing = await client.send(new GetCommand({ TableName, Key: { email } }));
-  if (existing.Item) throw new Error("User already existssss");
+  if (existing.Item) throw new Error("User already exists");
 
   const passwordHash = await hashPassword(password);
   await client.send(new PutCommand({ TableName, Item: { email, passwordHash } }));
