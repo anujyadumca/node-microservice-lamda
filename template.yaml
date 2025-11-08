@@ -32,7 +32,7 @@ Resources:
       Environment:
         Variables:
           USERS_TABLE: !Ref UsersTable
-          JWT_SECRET: !Sub "{{resolve:ssm-secure:/auth-basic/dev/JWT_SECRET}}"
+          JWT_SECRET: "{{resolve:ssm-secure:/auth-basic/dev/JWT_SECRET}}"
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
