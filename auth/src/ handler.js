@@ -13,6 +13,7 @@ app.post("/auth/register", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await register(email, password);
+    console.log(user);
     return res.status(201).json({ user });
   } catch (err) {
     return res.status(400).json({ message: err.message });
