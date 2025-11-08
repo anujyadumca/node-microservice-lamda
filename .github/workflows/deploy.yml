@@ -41,5 +41,5 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
             --resolve-s3 \
-            --parameter-overrides ProjectName=auth-basic JwtSecret=/auth-basic/dev/JWT_SECRET
+           
 

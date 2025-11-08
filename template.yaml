@@ -6,9 +6,6 @@ Parameters:
   ProjectName:
     Type: String
     Default: auth-basic
-  JwtSecret:
-    Type: AWS::SSM::Parameter::Value<String>
-    Default: /auth-basic/dev/JWT_SECRET
 
 Resources:
   UsersTable:
@@ -50,5 +47,5 @@ Resources:
 
 Outputs:
   ApiUrl:
+    Description: API Gateway endpoint URL
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
-    Description: Base URL for the REST API
