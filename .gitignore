@@ -1,0 +1,17 @@
+# Ignore Node modules
+node_modules/
+auth/node_modules/
+
+# Build folders
+.aws-sam/
+.sam-cache/
+dist/
+build/
+
+# Local environment files
+.env
+*.env
+
+# OS junk
+.DS_Store
+
