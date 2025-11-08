@@ -1,0 +1,44 @@
+name: Deploy Auth Microservice to AWS Lambda
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Install SAM CLI
+        run: pip install aws-sam-cli
+
+      - name: Install Dependencies for Auth Service
+        run: npm --prefix auth install
+
+      - name: Build SAM Project
+        run: sam build
+
+      - name: Deploy to AWS
+        run: |
+          sam deploy \
+            --stack-name auth-basic \
+            --capabilities CAPABILITY_IAM \
+            --no-confirm-changeset \
+            --parameter-overrides ProjectName=auth-basic JwtSecret=/auth-basic/dev/JWT_SECRET
+
