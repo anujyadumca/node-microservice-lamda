@@ -26,10 +26,14 @@ jobs:
           aws-region: ap-south-1
 
       - name: Install SAM CLI
-        run: pip install aws-sam-cli
+        run: |
+          pip install aws-sam-cli
+          sam --version
 
       - name: Install Dependencies for Auth Service
-        run: npm --prefix auth install
+        run: |
+          cd auth
+          npm install
 
       - name: Build SAM Project
         run: sam build
@@ -38,8 +42,8 @@ jobs:
         run: |
           sam deploy \
             --stack-name auth-basic \
+            --s3-bucket aws-sam-cli-managed-default-samclisourcebucket-mo2kdawlmio9 \
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
-            --resolve-s3 \
-           
-
+            --no-fail-on-empty-changeset \
+            --parameter-overrides JwtSecretParamPath="/auth-basic/dev/JWT_SECRET"

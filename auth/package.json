@@ -4,6 +4,7 @@
   "type": "module",
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.927.0",
+    "@aws-sdk/client-ssm": "^3.927.0",
     "@aws-sdk/lib-dynamodb": "^3.927.0",
     "@vendia/serverless-express": "^4.12.6",
     "bcryptjs": "^2.4.3",

@@ -1,0 +1,11 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "auth-basic"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-mo2kdawlmio9"
+s3_prefix = "auth-basic"
+region = "ap-south-1"
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = false
+disable_rollback = false

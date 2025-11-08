@@ -13,7 +13,7 @@ app.post("/auth/register", async (req, res) => {
   try {
     const { email, password } = req.body;
     const user = await register(email, password);
-    console.log(user);
+    //console.log(user);
     return res.status(201).json({ user });
   } catch (err) {
     return res.status(400).json({ message: err.message });
@@ -42,6 +42,15 @@ app.get("/auth/me", async (req, res) => {
   } catch {
     return res.status(401).json({ message: "Unauthorized" });
   }
+});
+
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.json({ 
+    status: "healthy", 
+    service: "auth-service",
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Export handler for Lambda

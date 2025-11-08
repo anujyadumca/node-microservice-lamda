@@ -6,8 +6,8 @@ Parameters:
   ProjectName:
     Type: String
     Default: auth-basic
-  JwtSecret:
-    Type: AWS::SSM::Parameter::Value<String>
+  JwtSecretParamPath:
+    Type: String
     Default: /auth-basic/dev/JWT_SECRET
 
 Resources:
@@ -31,14 +31,21 @@ Resources:
       Handler: src/handler.handler
       Runtime: nodejs18.x
       MemorySize: 256
-      Timeout: 10
+      Timeout: 30
       Environment:
         Variables:
           USERS_TABLE: !Ref UsersTable
-          JWT_SECRET: !Ref JwtSecret
+          JWT_SECRET_PARAM_PATH: !Ref JwtSecretParamPath
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - ssm:GetParameter
+                - ssm:GetParameters
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/auth-basic*"
       Events:
         ApiGateway:
           Type: HttpApi
