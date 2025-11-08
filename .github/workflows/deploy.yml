@@ -8,7 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -25,18 +24,38 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-south-1
 
-      - name: Install SAM CLI
+      - name: Create SSM Parameter
         run: |
-          pip install aws-sam-cli
-          sam --version
+          aws ssm put-parameter \
+            --name "/auth-basic/dev/JWT_SECRET" \
+            --value "${{ secrets.JWT_SECRET || 'default-jwt-secret-key-32-chars-long-123' }}" \
+            --type SecureString \
+            --overwrite \
+            --region ap-south-1
 
-      - name: Install Dependencies for Auth Service
+      - name: Install SAM CLI
+        run: pip install aws-sam-cli
+
+      - name: Verify Project Structure
+        run: |
+          echo "=== Project Structure ==="
+          find . -name "*.js" -o -name "*.json" -o -name "*.yaml" -o -name "*.yml" | grep -v node_modules | sort
+          echo ""
+          echo "=== Auth Directory Contents ==="
+          ls -la auth/
+          echo ""
+          echo "=== Auth/src Directory Contents ==="
+          ls -la auth/src/
+
+      - name: Install Dependencies
         run: |
           cd auth
           npm install
+          # Test if handler can be loaded
+          node -e "import('./src/handler.js').then(m => console.log('✅ Handler loaded successfully')).catch(e => console.log('❌ Handler load failed:', e.message))"
 
       - name: Build SAM Project
-        run: sam build
+        run: sam build --debug
 
       - name: Deploy to AWS
         run: |
@@ -45,5 +64,4 @@ jobs:
             --s3-bucket aws-sam-cli-managed-default-samclisourcebucket-mo2kdawlmio9 \
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
-            --no-fail-on-empty-changeset \
-            --parameter-overrides JwtSecretParamPath="/auth-basic/dev/JWT_SECRET"
+            --no-fail-on-empty-changeset

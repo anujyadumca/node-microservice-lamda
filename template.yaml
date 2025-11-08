@@ -27,25 +27,26 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-auth"
-      CodeUri: auth/
-      Handler: src/handler.handler
+      CodeUri: auth/                    # Points to auth folder
+      Handler: src/handler.handler      # ← FIXED: Now points to src/handler.js
       Runtime: nodejs18.x
-      MemorySize: 256
+      MemorySize: 512
       Timeout: 30
       Environment:
         Variables:
           USERS_TABLE: !Ref UsersTable
           JWT_SECRET_PARAM_PATH: !Ref JwtSecretParamPath
+          NODE_ENV: production
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
-        - Version: '2012-10-17'
-          Statement:
+        - Statement:
             - Effect: Allow
               Action:
                 - ssm:GetParameter
                 - ssm:GetParameters
-              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/auth-basic*"
+              Resource: 
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/auth-basic*"
       Events:
         ApiGateway:
           Type: HttpApi

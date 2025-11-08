@@ -44,13 +44,19 @@ app.get("/auth/me", async (req, res) => {
   }
 });
 
-// Health check endpoint
+// Health check
 app.get("/health", (req, res) => {
+  console.log("Health check called");
   res.json({ 
     status: "healthy", 
     service: "auth-service",
     timestamp: new Date().toISOString()
   });
+});
+
+// Test route
+app.get("/test", (req, res) => {
+  res.json({ message: "Test route working" });
 });
 
 // Export handler for Lambda
