@@ -6,6 +6,9 @@ Parameters:
   ProjectName:
     Type: String
     Default: auth-basic
+  JwtSecret:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /auth-basic/dev/JWT_SECRET
 
 Resources:
   UsersTable:
@@ -32,12 +35,10 @@ Resources:
       Environment:
         Variables:
           USERS_TABLE: !Ref UsersTable
-          JWT_SECRET: "{{resolve:ssm-secure:/auth-basic/dev/JWT_SECRET}}"
+          JWT_SECRET: !Ref JwtSecret
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
-        - SSMParameterReadPolicy:
-            ParameterName: /auth-basic/dev/JWT_SECRET
       Events:
         ApiGateway:
           Type: HttpApi
@@ -47,5 +48,5 @@ Resources:
 
 Outputs:
   ApiUrl:
-    Description: API Gateway endpoint URL
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+    Description: Base URL for the REST API
