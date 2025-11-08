@@ -19,29 +19,32 @@ jobs:
         with:
           node-version: 18
 
-      - name: Configure AWS (OIDC or keys)
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ap-south-1
-          # If using long-lived keys:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          # If using an IAM role with OIDC instead, replace with:
-          # role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
 
-      - name: Ensure SSM param exists
+      - name: Ensure SSM Parameter exists
         run: |
           aws ssm put-parameter \
             --name "/auth-basic/dev/JWT_SECRET" \
-            --value "${{ secrets.JWT_SECRET || 'dev-secret-change-me' }}" \
-            --type SecureString --overwrite
+            --value "${{ secrets.JWT_SECRET || 'dev-secret-change-me-1234567890' }}" \
+            --type SecureString \
+            --overwrite \
+            --region ap-south-1
 
       - name: Install SAM CLI
         run: pip install aws-sam-cli
 
-      - name: Install deps
+      - name: Install dependencies
         working-directory: auth
         run: npm ci
+
+      - name: Test handler loads
+        working-directory: auth
+        run: node -e "require('./handler.js'); console.log('✅ Handler loads successfully')"
 
       - name: SAM build
         run: sam build
@@ -53,4 +56,4 @@ jobs:
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
             --resolve-s3 \
-            --parameter-overrides ProjectName=auth-basic JwtSecretParamPath=/auth-basic/dev/JWT_SECRET
+            --no-fail-on-empty-changeset
