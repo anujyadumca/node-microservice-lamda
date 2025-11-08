@@ -1,64 +1,35 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
-import bcrypt from 'bcryptjs';
+const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
+const { DynamoDBDocumentClient, GetCommand, PutCommand } = require("@aws-sdk/lib-dynamodb");
+const bcrypt = require("bcryptjs");
 
-const client = new DynamoDBClient({});
-const docClient = DynamoDBDocumentClient.from(client);
+const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+const TableName = process.env.USERS_TABLE;
 
-export const register = async (email, password) => {
-  // Check if user exists
-  const getCommand = new GetCommand({
-    TableName: process.env.USERS_TABLE,
-    Key: { email }
-  });
+async function register(email, password) {
+  const existing = await ddb.send(new GetCommand({ TableName, Key: { email } }));
+  if (existing.Item) throw new Error("User already exists");
 
-  const existingUser = await docClient.send(getCommand);
-  if (existingUser.Item) {
-    throw new Error('User already exists');
-  }
-
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Create user
-  const putCommand = new PutCommand({
-    TableName: process.env.USERS_TABLE,
+  const passwordHash = await bcrypt.hash(password, 10);
+  await ddb.send(new PutCommand({
+    TableName,
     Item: {
       email,
-      password: hashedPassword,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      passwordHash,
+      createdAt: new Date().toISOString()
     }
-  });
+  }));
 
-  await docClient.send(putCommand);
+  return { email };
+}
 
-  return {
-    email,
-    createdAt: new Date().toISOString()
-  };
-};
+async function login(email, password) {
+  const found = await ddb.send(new GetCommand({ TableName, Key: { email } }));
+  if (!found.Item) throw new Error("Invalid credentials");
 
-export const login = async (email, password) => {
-  const getCommand = new GetCommand({
-    TableName: process.env.USERS_TABLE,
-    Key: { email }
-  });
+  const ok = await bcrypt.compare(password, found.Item.passwordHash);
+  if (!ok) throw new Error("Invalid credentials");
 
-  const result = await docClient.send(getCommand);
-  const user = result.Item;
+  return { email };
+}
 
-  if (!user) {
-    throw new Error('User not found');
-  }
-
-  const isValidPassword = await bcrypt.compare(password, user.password);
-  if (!isValidPassword) {
-    throw new Error('Invalid password');
-  }
-
-  return {
-    email: user.email,
-    createdAt: user.createdAt
-  };
-};
+module.exports = { register, login };

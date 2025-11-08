@@ -2,66 +2,55 @@ name: Deploy Auth Microservice to AWS Lambda
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
-      - name: Checkout Code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS (OIDC or keys)
         uses: aws-actions/configure-aws-credentials@v4
         with:
+          aws-region: ap-south-1
+          # If using long-lived keys:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ap-south-1
+          # If using an IAM role with OIDC instead, replace with:
+          # role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
 
-      - name: Create SSM Parameter
+      - name: Ensure SSM param exists
         run: |
           aws ssm put-parameter \
             --name "/auth-basic/dev/JWT_SECRET" \
-            --value "${{ secrets.JWT_SECRET || 'default-jwt-secret-key-32-chars-long-123' }}" \
-            --type SecureString \
-            --overwrite \
-            --region ap-south-1
+            --value "${{ secrets.JWT_SECRET || 'dev-secret-change-me' }}" \
+            --type SecureString --overwrite
 
       - name: Install SAM CLI
         run: pip install aws-sam-cli
 
-      - name: Verify Project Structure
-        run: |
-          echo "=== Project Structure ==="
-          find . -name "*.js" -o -name "*.json" -o -name "*.yaml" -o -name "*.yml" | grep -v node_modules | sort
-          echo ""
-          echo "=== Auth Directory Contents ==="
-          ls -la auth/
-          echo ""
-          echo "=== Auth/src Directory Contents ==="
-          ls -la auth/src/
+      - name: Install deps
+        working-directory: auth
+        run: npm ci
 
-      - name: Install Dependencies
-        run: |
-          cd auth
-          npm install
-          # Test if handler can be loaded
-          node -e "import('./src/handler.js').then(m => console.log('✅ Handler loaded successfully')).catch(e => console.log('❌ Handler load failed:', e.message))"
+      - name: SAM build
+        run: sam build
 
-      - name: Build SAM Project
-        run: sam build --debug
-
-      - name: Deploy to AWS
+      - name: SAM deploy
         run: |
           sam deploy \
             --stack-name auth-basic \
-            --s3-bucket aws-sam-cli-managed-default-samclisourcebucket-mo2kdawlmio9 \
             --capabilities CAPABILITY_IAM \
             --no-confirm-changeset \
-            --no-fail-on-empty-changeset
+            --resolve-s3 \
+            --parameter-overrides ProjectName=auth-basic JwtSecretParamPath=/auth-basic/dev/JWT_SECRET

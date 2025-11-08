@@ -27,16 +27,15 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "${ProjectName}-auth"
-      CodeUri: auth/                    # Points to auth folder
-      Handler: src/handler.handler      # ← FIXED: Now points to src/handler.js
+      CodeUri: auth/
+      Handler: handler.handler       # <fileName>.<exportName> (CommonJS)
       Runtime: nodejs18.x
       MemorySize: 512
       Timeout: 30
       Environment:
         Variables:
           USERS_TABLE: !Ref UsersTable
-          JWT_SECRET_PARAM_PATH: !Ref JwtSecretParamPath
-          NODE_ENV: production
+          JWT_SECRET_PARAM_PATH: !Ref JwtSecretParamPath   # just the PATH string
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref UsersTable
@@ -44,11 +43,10 @@ Resources:
             - Effect: Allow
               Action:
                 - ssm:GetParameter
-                - ssm:GetParameters
-              Resource: 
-                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/auth-basic*"
+              Resource:
+                - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${JwtSecretParamPath}"
       Events:
-        ApiGateway:
+        Api:
           Type: HttpApi
           Properties:
             Path: /{proxy+}
@@ -56,5 +54,5 @@ Resources:
 
 Outputs:
   ApiUrl:
+    Description: Base URL
     Value: !Sub "https://${ServerlessHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
-    Description: Base URL for the REST API
